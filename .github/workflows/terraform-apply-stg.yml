@@ -1,0 +1,49 @@
+#Name of the wokflow
+name: 'Staging - Terraform Apply'
+# The workflow will be trigered On push to main branch to Staging folder. 
+on:
+  push:
+    branches:
+      - main
+    paths:
+      - Staging/**
+
+
+jobs:
+  terraform:
+    name: 'Terraform'
+    runs-on: ubuntu-latest
+    environment: Staging
+    env:
+      ARM_CLIENT_ID: ${{secrets.TF_VAR_CLIENT_ID}}
+      ARM_CLIENT_SECRET: ${{secrets.TF_VAR_CLIENT_SECRET}}
+      ARM_SUBSCRIPTION_ID: ${{secrets.TF_VAR_SUBSCRIPTION_ID}}
+      ARM_TENANT_ID: ${{secrets.TF_VAR_TENANT_ID}}
+      ARM_STORAGE_USE_AZUREAD: true
+      tf_actions_working_dir: "Staging/"
+
+    # Use the Bash shell regardless whether the GitHub Actions runner is ubuntu-latest, macos-latest, or windows-latest
+    defaults:
+      run:
+        shell: bash
+        working-directory: ${{ env.tf_actions_working_dir }}
+
+
+    steps:
+    # Checkout the repository to the GitHub Actions runner
+    - name: Checkout
+      uses: actions/checkout@v2
+
+    # Install the latest version of Terraform CLI and configure the Terraform CLI configuration file with a Terraform Cloud user API token
+    - name: Setup Terraform
+      uses: hashicorp/setup-terraform@v1
+      with:
+        terraform_version: 0.14.7
+
+    # Initialize a new or existing Terraform working directory by creating initial files, loading any remote state, downloading modules, etc.
+    - name: Terraform Init
+      run: terraform init
+
+    # Generates an execution plan for Terraform
+    - name: Terraform apply
+      run: terraform apply -auto-approve      
